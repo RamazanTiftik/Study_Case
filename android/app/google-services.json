@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "746780446285",
+    "project_id": "perconcaseproject",
+    "storage_bucket": "perconcaseproject.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:746780446285:android:667ca207a9b5caf1a2d604",
+        "android_client_info": {
+          "package_name": "com.rt.percon_case_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDg4PIW134ArHkHFrd9Z4vF1jwYpcAQLkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

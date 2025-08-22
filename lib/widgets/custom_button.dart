@@ -3,19 +3,19 @@ import 'package:percon_case_project/theme/app_theme.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final Future<void> Function()? onPressed;
   final Color? backgroundColor;
   final double? borderRadius;
   final double? height;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor,
     this.borderRadius,
     this.height,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

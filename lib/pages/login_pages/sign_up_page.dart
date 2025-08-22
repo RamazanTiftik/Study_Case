@@ -1,40 +1,32 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:percon_case_project/pages/login_pages/login_page.dart';
-import 'package:percon_case_project/service/auth.dart';
 import 'package:percon_case_project/theme/app_theme.dart';
 import 'package:percon_case_project/widgets/custom_button.dart';
+import 'package:percon_case_project/providers/auth_provider.dart';
 
-class SignUpPage extends StatefulWidget {
+class SignUpPage extends ConsumerStatefulWidget {
   const SignUpPage({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
+  ConsumerState<SignUpPage> createState() => _SignUpPageState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
-  // email & password controllers
+class _SignUpPageState extends ConsumerState<SignUpPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController passwordConfirmController =
       TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
 
-  // error message
-  String? errorMessage;
-
-  // auth service
-  final Auth _authService = Auth();
-
-  // register method (Email/Password)
   Future<void> createUser() async {
+    final authNotifier = ref.read(authProvider.notifier);
+
     // password check
     if (passwordController.text != passwordConfirmController.text) {
-      setState(() {
-        errorMessage = "Şifreler uyuşmuyor!";
-      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage!),
+        const SnackBar(
+          content: Text("Şifreler uyuşmuyor!"),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 3),
         ),
@@ -42,28 +34,25 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    try {
-      await _authService.createUser(
-        email: emailController.text,
-        password: passwordController.text,
-      );
+    await authNotifier.register(
+      emailController.text.trim(),
+      passwordController.text.trim(),
+      usernameController.text.trim(),
+    );
 
-      // Login sayfasına yönlendir
+    // register işlemi sonrası state kontrolü
+    final state = ref.watch(authProvider);
+    if (state.user != null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
       );
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        errorMessage = e.message;
-      });
-
-      // Hata mesajı
+    } else if (state.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Kayıt Başarısız! $errorMessage"),
+          content: Text("Kayıt Başarısız! ${state.error}"),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -71,11 +60,13 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 196, 217, 234),
-        title: Text("Kayıt Ol"),
+        title: const Text("Kayıt Ol"),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -84,55 +75,68 @@ class _SignUpPageState extends State<SignUpPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // email text field
+                // username
+                TextField(
+                  controller: usernameController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    hintText: "Username",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // email
                 TextField(
                   controller: emailController,
-                  decoration: InputDecoration(
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
                     hintText: "Email",
                     border: OutlineInputBorder(),
                   ),
                 ),
-
                 const SizedBox(height: 20),
 
-                // password text field
+                // password
                 TextField(
                   controller: passwordController,
                   obscureText: true,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: "Password",
                     border: OutlineInputBorder(),
                   ),
                 ),
-
                 const SizedBox(height: 20),
 
-                // confirm password text field
+                // confirm password
                 TextField(
                   controller: passwordConfirmController,
                   obscureText: true,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: "Confirm Password",
                     border: OutlineInputBorder(),
                   ),
                 ),
-
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
                 // error message
-                if (errorMessage != null)
+                if (authState.error != null)
                   Text(
-                    errorMessage!,
-                    style: TextStyle(color: Colors.red),
+                    authState.error!,
+                    style: const TextStyle(color: Colors.red),
                     textAlign: TextAlign.center,
                   ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
 
                 // sign up button
                 CustomButton(
-                  text: "Kayıt Ol",
-                  onPressed: createUser,
+                  text: authState.isLoading ? "Kayıt Olunuyor..." : "Kayıt Ol",
+                  onPressed: authState.isLoading
+                      ? null
+                      : () async {
+                          await createUser();
+                        },
                   backgroundColor: AppTheme.primaryColor,
                   borderRadius: 20,
                   height: 55,
@@ -143,5 +147,14 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    passwordConfirmController.dispose();
+    usernameController.dispose();
+    super.dispose();
   }
 }

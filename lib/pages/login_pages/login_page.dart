@@ -1,20 +1,22 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:percon_case_project/pages/login_pages/sign_up_page.dart';
 import 'package:percon_case_project/pages/mainPages/home_screen.dart';
 import 'package:percon_case_project/service/auth.dart';
 import 'package:percon_case_project/theme/app_theme.dart';
 import 'package:percon_case_project/widgets/custom_button.dart';
 import 'package:percon_case_project/widgets/custom_toast_message.dart';
+import 'package:percon_case_project/providers/auth_provider.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   // controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -22,29 +24,23 @@ class _LoginPageState extends State<LoginPage> {
   // auth service
   final Auth _authService = Auth();
 
-  // error message
-  String? errorMessage;
-
   // sign in method
   Future<void> signIn() async {
-    try {
-      await _authService.signIn(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+    final authNotifier = ref.read(authProvider.notifier);
 
-      if (!mounted) return;
+    await authNotifier.login(
+      emailController.text.trim(),
+      passwordController.text.trim(),
+    );
 
+    final state = ref.read(authProvider);
+    if (state.user != null && mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        errorMessage = e.message;
-      });
-
-      showToast(context, "Giriş Başarısız! ${e.message}", false);
+    } else if (state.error != null) {
+      showToast(context, "Giriş Başarısız! ${state.error}", false);
     }
   }
 
@@ -52,32 +48,31 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> resetPassword(String email) async {
     try {
       await _authService.resetPassword(email: email);
-
       if (!mounted) return;
-
       showToast(
         context,
         "Şifre sıfırlama linki e-posta adresinize gönderildi.",
         true,
       );
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseException catch (e) {
       showToast(context, "Hata: ${e.message}", false);
     }
   }
 
   // google sign-in
   Future<void> signInWithGoogle() async {
-    try {
-      final userCredential = await _authService.signInWithGoogle();
-      if (userCredential == null) return;
-      if (!mounted) return;
+    final authNotifier = ref.read(authProvider.notifier);
 
+    await authNotifier.loginWithGoogle();
+
+    final state = ref.read(authProvider);
+    if (state.user != null && mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
-    } on FirebaseAuthException catch (e) {
-      showToast(context, "Google ile giriş başarısız: ${e.message}", false);
+    } else if (state.error != null) {
+      showToast(context, "Google ile giriş başarısız: ${state.error}", false);
     }
   }
 
@@ -137,6 +132,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -224,19 +221,24 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 10),
 
                   // error
-                  errorMessage != null
-                      ? Text(
-                          errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                        )
-                      : const SizedBox.shrink(),
+                  if (authState.error != null)
+                    Text(
+                      authState.error!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
 
                   const SizedBox(height: 30),
 
                   // login button
                   CustomButton(
-                    text: "Giriş Yap",
-                    onPressed: signIn,
+                    text: authState.isLoading
+                        ? "Giriş Yapılıyor..."
+                        : "Giriş Yap",
+                    onPressed: authState.isLoading
+                        ? null
+                        : () async {
+                            await signIn();
+                          },
                     backgroundColor: AppTheme.primaryColor,
                     borderRadius: 20,
                     height: 55,
@@ -259,7 +261,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // google sign-in
                   GestureDetector(
-                    onTap: signInWithGoogle,
+                    onTap: authState.isLoading ? null : signInWithGoogle,
                     child: Container(
                       padding: const EdgeInsets.all(15),
                       height: 75,
@@ -282,5 +284,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 }

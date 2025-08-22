@@ -1,35 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:percon_case_project/pages/mainPages/favorite_screen.dart';
 import 'package:percon_case_project/pages/mainPages/profile_screen.dart';
 import 'package:percon_case_project/widgets/custom_app_bar.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class FavoriteScreen extends StatefulWidget {
+  const FavoriteScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _MyWidgetState();
+  State<FavoriteScreen> createState() => _MyWidgetState();
 }
 
-class _MyWidgetState extends State<HomeScreen> {
+class _MyWidgetState extends State<FavoriteScreen> {
   @override
   Widget build(BuildContext context) {
-    //auth service
-    /* Auth authService = Auth(); */
-
-    /*  Future<void> appBarSignOut() async {
-      await authService.signOut();
-      Navigator.pushReplacement(
-        navigatorKey.currentContext!,
-        MaterialPageRoute(builder: (context) => LoginPage()),
-      );
-    } */
-
     // VIEW
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Home Screen",
+        title: "Favorite Screen",
+        showBackButton: true,
         onFilterPressed: () {
-          print("Filter clicked");
+          Navigator.pop(context);
         },
         onFavoritePressed: () {
           Navigator.push(

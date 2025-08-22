@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:percon_case_project/pages/login_pages/login_page.dart';
 import 'package:percon_case_project/theme/app_theme.dart';
 import 'firebase_options.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

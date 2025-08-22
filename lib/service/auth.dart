@@ -1,46 +1,62 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // Google Sign-In paketi eklendi
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:percon_case_project/model/app_user.dart';
 
 class Auth {
-  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  // Firebase
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  User? get currentUser => firebaseAuth.currentUser;
+  User? get currentUser => _auth.currentUser;
 
-  Stream<User?> get authStateChanges => firebaseAuth.authStateChanges();
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  //register (Email & Password)
-  Future<void> createUser({
-    required String email,
-    required String password,
-  }) async {
-    await firebaseAuth.createUserWithEmailAndPassword(
+  //  Register (Email & Password)
+  Future<UserCredential> register(
+    String email,
+    String password,
+    String fullName,
+  ) async {
+    final cred = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    await _firestore.collection('users').doc(cred.user!.uid).set({
+      'fullName': fullName,
+      'email': cred.user!.email,
+      'createdAt': FieldValue.serverTimestamp(),
+      'lastLogin': FieldValue.serverTimestamp(),
+    });
+
+    return cred;
   }
 
-  //login (Email & Password)
-  Future<void> signIn({required String email, required String password}) async {
-    await firebaseAuth.signInWithEmailAndPassword(
+  // Login (Email & Password)
+  Future<UserCredential> login(String email, String password) async {
+    final cred = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    await _firestore.collection('users').doc(cred.user!.uid).update({
+      'lastLogin': FieldValue.serverTimestamp(),
+    });
+
+    return cred;
   }
 
-  //reset password (email & password)
+  //  Reset password
   Future<void> resetPassword({required String email}) async {
-    await firebaseAuth.sendPasswordResetEmail(email: email);
+    await _auth.sendPasswordResetEmail(email: email);
   }
 
-  // Google Sign-In
+  //  Google Sign-In
   Future<UserCredential?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-      if (googleUser == null) {
-        // user came back page
-        return null;
-      }
+      if (googleUser == null) return null; // kullanıcı iptal etti
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -50,7 +66,17 @@ class Auth {
         idToken: googleAuth.idToken,
       );
 
-      return await FirebaseAuth.instance.signInWithCredential(credential);
+      final cred = await _auth.signInWithCredential(credential);
+
+      // Firestore’a kullanıcı bilgilerini kaydet/güncelle
+      await _firestore.collection('users').doc(cred.user!.uid).set({
+        'fullName': cred.user!.displayName ?? '',
+        'email': cred.user!.email,
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastLogin': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      return cred;
     } catch (e) {
       throw FirebaseAuthException(
         code: "google-sign-in-failed",
@@ -59,9 +85,34 @@ class Auth {
     }
   }
 
-  //sign out
+  //  Sign out
   Future<void> signOut() async {
     await GoogleSignIn().signOut();
-    await firebaseAuth.signOut();
+    await _auth.signOut();
+  }
+}
+
+// extension -> pull user data from firestore
+extension FirestoreAuthExtension on Auth {
+  Future<AppUser?> getUserFromFirestore(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
+          return AppUser.fromMap({
+            'uid': uid,
+            'fullName': data['fullName'],
+            'email': data['email'],
+            'createdAt': data['createdAt'],
+            'lastLogin': data['lastLogin'],
+          });
+        }
+      }
+      return null;
+    } catch (e) {
+      print("Firestore user fetch error: $e");
+      return null;
+    }
   }
 }

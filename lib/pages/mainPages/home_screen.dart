@@ -14,18 +14,26 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  //grid view / list view controller
   bool isGridView = false;
-
-  //selected country for filter dialog
   String? selectedCountry;
 
   @override
+  void initState() {
+    super.initState();
+    _loadTrips();
+  }
+
+  Future<void> _loadTrips() async {
+    // Firestore'dan favorilerle birlikte yükle
+    await ref.read(travelProvider.notifier).loadTrips();
+    setState(() {
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    //travels list from api
     final travels = ref.watch(travelProvider);
 
-    // filter for country
     final filteredTravels = selectedCountry == null
         ? travels
         : travels.where((t) => t.country == selectedCountry).toList();
@@ -34,7 +42,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: CustomAppBar(
         title: "Home Screen",
         onFilterPressed: () async {
-          // filter button -> open to filter dialog menu
           final result = await showDialog<String>(
             context: context,
             builder: (ctx) => SimpleDialog(
@@ -73,14 +80,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
       ),
-      //isGridView check
-      body: isGridView
-          //grid view
+      body: travels.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : isGridView
           ? GridView.builder(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
               itemCount: filteredTravels.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 2 sütun
+                crossAxisCount: 2,
                 childAspectRatio: 0.62,
                 crossAxisSpacing: 1,
                 mainAxisSpacing: 10,
@@ -90,7 +97,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return _buildTravelCard(travel);
               },
             )
-          //list view
           : ListView.builder(
               itemCount: filteredTravels.length,
               itemBuilder: (context, index) {
@@ -98,8 +104,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return _buildTravelCard(travel);
               },
             ),
-
-      //floating button -> grid view & list view controller
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
@@ -111,7 +115,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  //travel card
   Widget _buildTravelCard(Travel travel) {
     if (isGridView) {
       return Card(
@@ -120,13 +123,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Stack(
           children: [
-            // İçerik
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // title
                   Row(
                     children: [
                       const Icon(Icons.title, size: 18),
@@ -144,8 +145,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  // location
                   Row(
                     children: [
                       const Icon(Icons.location_on, size: 16),
@@ -160,8 +159,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // description
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -178,8 +175,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-
-                  // category
                   Row(
                     children: [
                       const Icon(Icons.category, size: 14),
@@ -194,8 +189,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 5),
-
-                  // start date
                   Row(
                     children: [
                       const Icon(Icons.calendar_today, size: 14),
@@ -207,8 +200,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 5),
-
-                  // end date
                   Row(
                     children: [
                       const Icon(Icons.calendar_month, size: 14),
@@ -219,12 +210,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 35), // kalp için boşluk bırak
+                  const SizedBox(height: 35),
                 ],
               ),
             ),
-
-            // Sağ altta sabit favori buton
             Positioned(
               bottom: 8,
               right: 8,
@@ -243,7 +232,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    // Liste görünümde ExpansionTile
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       elevation: 3,
@@ -251,14 +239,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: ExpansionTile(
         title: Text(
           travel.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18, // GridView ile aynı
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         subtitle: Text(
           "${travel.country} - ${travel.region}",
-          style: const TextStyle(fontSize: 16), // GridView ile aynı
+          style: const TextStyle(fontSize: 16),
         ),
         trailing: IconButton(
           icon: Icon(

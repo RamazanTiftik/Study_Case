@@ -7,7 +7,7 @@ class Travel {
   final DateTime endDate;
   final String category;
   final String description;
-  bool isFavorite;
+  bool isFavorite; // sadece UI için, JSON'dan gelmez
 
   Travel({
     required this.id,
@@ -18,7 +18,7 @@ class Travel {
     required this.endDate,
     required this.category,
     required this.description,
-    this.isFavorite = false,
+    this.isFavorite = false, // default runtime değeri
   });
 
   factory Travel.fromJson(Map<String, dynamic> json) {
@@ -31,7 +31,31 @@ class Travel {
       endDate: DateTime.parse(json['endDate']),
       category: json['category'],
       description: json['description'],
-      isFavorite: json['isFavorite'] ?? false,
+      // isFavorite do not read from json
+    );
+  }
+
+  Travel copyWith({
+    String? id,
+    String? title,
+    String? country,
+    String? region,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? category,
+    String? description,
+    bool? isFavorite,
+  }) {
+    return Travel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      country: country ?? this.country,
+      region: region ?? this.region,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      category: category ?? this.category,
+      description: description ?? this.description,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -45,8 +69,7 @@ class Travel {
       'endDate': endDate.toIso8601String(),
       'category': category,
       'description': description,
-      'isFavorite': isFavorite,
+      // isFavorite will come from firestore
     };
   }
-  
 }

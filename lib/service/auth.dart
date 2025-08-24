@@ -8,6 +8,7 @@ class Auth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  //current user
   User? get currentUser => _auth.currentUser;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -56,7 +57,7 @@ class Auth {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return null; // kullanıcı iptal etti
+      if (googleUser == null) return null; // user cancelled
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
@@ -68,7 +69,7 @@ class Auth {
 
       final cred = await _auth.signInWithCredential(credential);
 
-      // Firestore’a kullanıcı bilgilerini kaydet/güncelle
+      // save user data to firestore
       await _firestore.collection('users').doc(cred.user!.uid).set({
         'fullName': cred.user!.displayName ?? '',
         'email': cred.user!.email,

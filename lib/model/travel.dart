@@ -7,7 +7,7 @@ class Travel {
   final DateTime endDate;
   final String category;
   final String description;
-  bool isFavorite; // sadece UI için, JSON'dan gelmez
+  bool isFavorite; // only for ui, not for json
 
   Travel({
     required this.id,
@@ -18,7 +18,7 @@ class Travel {
     required this.endDate,
     required this.category,
     required this.description,
-    this.isFavorite = false, // default runtime değeri
+    this.isFavorite = false, // default runtime 
   });
 
   factory Travel.fromJson(Map<String, dynamic> json) {

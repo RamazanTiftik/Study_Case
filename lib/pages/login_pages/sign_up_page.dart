@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:percon_case_project/l10n/app_localizations.dart';
 import 'package:percon_case_project/pages/login_pages/login_page.dart';
 import 'package:percon_case_project/theme/app_theme.dart';
 import 'package:percon_case_project/widgets/custom_button.dart';
@@ -13,22 +14,28 @@ class SignUpPage extends ConsumerStatefulWidget {
 }
 
 class _SignUpPageState extends ConsumerState<SignUpPage> {
+  //text controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController passwordConfirmController =
       TextEditingController();
   final TextEditingController usernameController = TextEditingController();
 
+  //create user method
   Future<void> createUser() async {
+    //state management
     final authNotifier = ref.read(authProvider.notifier);
+
+    //localization
+    final loc = AppLocalizations.of(context)!;
 
     // password check
     if (passwordController.text != passwordConfirmController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Şifreler uyuşmuyor!"),
+        SnackBar(
+          content: Text(loc.passwordsDoNotMatch),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
       return;
@@ -40,7 +47,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       usernameController.text.trim(),
     );
 
-    // register işlemi sonrası state kontrolü
+    // state check after register
     final state = ref.watch(authProvider);
     if (state.user != null) {
       Navigator.pushReplacement(
@@ -50,7 +57,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     } else if (state.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Kayıt Başarısız! ${state.error}"),
+          content: Text('${loc.signUpFailed} ${state.error}'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
         ),
@@ -60,13 +67,18 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
+    //auth state
     final authState = ref.watch(authProvider);
 
+    //localization
+    final loc = AppLocalizations.of(context)!;
+
+    //VIEW
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 196, 217, 234),
-        title: const Text("Kayıt Ol"),
+        title: Text(loc.signUp),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -79,44 +91,48 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                 TextField(
                   controller: usernameController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: "Username",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: loc.usernameHint,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
                 // email
                 TextField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    hintText: "Email",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: loc.email,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
                 // password
                 TextField(
                   controller: passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: "Password",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: loc.password,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
                 // confirm password
                 TextField(
                   controller: passwordConfirmController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: "Confirm Password",
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: loc.confirmPassword,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
                 // error message
@@ -131,12 +147,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
                 // sign up button
                 CustomButton(
-                  text: authState.isLoading ? "Kayıt Olunuyor..." : "Kayıt Ol",
+                  text: authState.isLoading ? loc.signingUp : loc.signUp,
                   onPressed: authState.isLoading
                       ? null
-                      : () async {
-                          await createUser();
-                        },
+                      : () async => await createUser(),
                   backgroundColor: AppTheme.primaryColor,
                   borderRadius: 20,
                   height: 55,
@@ -149,6 +163,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     );
   }
 
+  //dispose
   @override
   void dispose() {
     emailController.dispose();

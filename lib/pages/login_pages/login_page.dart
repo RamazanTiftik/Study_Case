@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:percon_case_project/pages/login_pages/sign_up_page.dart';
 import 'package:percon_case_project/pages/mainPages/home_screen.dart';
+import 'package:percon_case_project/providers/locale_provider.dart';
 import 'package:percon_case_project/service/auth.dart';
 import 'package:percon_case_project/theme/app_theme.dart';
 import 'package:percon_case_project/widgets/custom_button.dart';
 import 'package:percon_case_project/widgets/custom_toast_message.dart';
 import 'package:percon_case_project/providers/auth_provider.dart';
+import 'package:percon_case_project/l10n/app_localizations.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -17,15 +19,16 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  // controllers
+  //text controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  // auth service
+  //auth service
   final Auth _authService = Auth();
 
-  // sign in method
+  //sign in method
   Future<void> signIn() async {
+    //state management initialize
     final authNotifier = ref.read(authProvider.notifier);
 
     await authNotifier.login(
@@ -35,31 +38,40 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     final state = ref.read(authProvider);
     if (state.user != null && mounted) {
+      //if user not null, it's mean -> user did not signout then navigate to home page
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else if (state.error != null) {
-      showToast(context, "Giriş Başarısız! ${state.error}", false);
+      showToast(
+        context,
+        "${AppLocalizations.of(context)!.loginFailed}: ${state.error}",
+        false,
+      );
     }
   }
 
-  // reset password
+  //reset password -> send link to the mail
   Future<void> resetPassword(String email) async {
     try {
       await _authService.resetPassword(email: email);
       if (!mounted) return;
       showToast(
         context,
-        "Şifre sıfırlama linki e-posta adresinize gönderildi.",
+        AppLocalizations.of(context)!.resetPasswordLinkSent,
         true,
       );
     } on FirebaseException catch (e) {
-      showToast(context, "Hata: ${e.message}", false);
+      showToast(
+        context,
+        "${AppLocalizations.of(context)!.error}: ${e.message}",
+        false,
+      );
     }
   }
 
-  // google sign-in
+  //sign in with google method
   Future<void> signInWithGoogle() async {
     final authNotifier = ref.read(authProvider.notifier);
 
@@ -67,16 +79,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     final state = ref.read(authProvider);
     if (state.user != null && mounted) {
+      //login handled, navigate to home page
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else if (state.error != null) {
-      showToast(context, "Google ile giriş başarısız: ${state.error}", false);
+      showToast(
+        context,
+        "${AppLocalizations.of(context)!.googleSignInFailed}: ${state.error}",
+        false,
+      );
     }
   }
 
-  // forget password dialog
+  //reset password modal method
   void showResetPasswordDialog() {
     final TextEditingController resetEmailController = TextEditingController();
 
@@ -84,22 +101,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       context: context,
       barrierDismissible: true,
       builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-          title: const Text("Şifreyi Sıfırla"),
+          title: Text(l10n.resetPassword),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "E-posta adresinizi girin, şifre sıfırlama linki gönderilecek.",
-              ),
+              Text(l10n.enterEmailToReset),
               const SizedBox(height: 15),
               TextField(
                 controller: resetEmailController,
                 decoration: InputDecoration(
-                  hintText: "E-posta adresiniz",
+                  hintText: l10n.emailHint,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -110,7 +126,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("İptal"),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -119,10 +135,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   resetPassword(email);
                   Navigator.pop(context);
                 } else {
-                  showToast(context, "Lütfen e-posta giriniz!", false);
+                  showToast(context, l10n.enterEmailAlert, false);
                 }
               },
-              child: const Text("Gönder"),
+              child: Text(l10n.send),
             ),
           ],
         );
@@ -132,39 +148,53 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    //auth state
     final authState = ref.watch(authProvider);
 
+    //localization
+    final l10n = AppLocalizations.of(context)!;
+
+    //VIEW
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
             const SizedBox(height: 100),
-
-            // Language selection
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                
+                //TR Button
                 GestureDetector(
-                  onTap: () => print("🇹🇷 Türkçe seçildi"),
+                  onTap: () => ref.read(localeProvider.notifier).state =
+                      const Locale('tr'),
                   child: Image.asset(
                     "assets/images/tr.png",
                     height: 45,
                     width: 45,
                   ),
                 ),
+
                 const SizedBox(width: 35),
+
+                //DE Button
                 GestureDetector(
-                  onTap: () => print("🇩🇪 Almanca seçildi"),
+                  onTap: () => ref.read(localeProvider.notifier).state =
+                      const Locale('de'),
                   child: Image.asset(
                     "assets/images/de.png",
                     height: 45,
                     width: 45,
                   ),
                 ),
+
                 const SizedBox(width: 35),
+
+                //UK Button
                 GestureDetector(
-                  onTap: () => print("🇬🇧 İngilizce seçildi"),
+                  onTap: () => ref.read(localeProvider.notifier).state =
+                      const Locale('en'),
                   child: Image.asset(
                     "assets/images/uk.png",
                     height: 45,
@@ -173,43 +203,43 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 40),
-
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // email
+                  //mail textfield
                   TextField(
                     controller: emailController,
-                    decoration: const InputDecoration(
-                      hintText: "Email",
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      hintText: l10n.emailHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
+
                   const SizedBox(height: 20),
 
-                  // password
+                  //password textfield
                   TextField(
                     controller: passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      hintText: "Password",
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      hintText: l10n.passwordHint,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
+
                   const SizedBox(height: 10),
 
-                  // forget password
+                  //reset password text button
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
                       onTap: showResetPasswordDialog,
-                      child: const Text(
-                        "Şifreyi mi Unuttunuz?",
-                        style: TextStyle(
+                      child: Text(
+                        l10n.forgotPassword,
+                        style: const TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.underline,
@@ -218,9 +248,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 10),
 
-                  // error
+                  //error -> toast message
                   if (authState.error != null)
                     Text(
                       authState.error!,
@@ -229,16 +260,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   const SizedBox(height: 30),
 
-                  // login button
+                  //sign in button
                   CustomButton(
-                    text: authState.isLoading
-                        ? "Giriş Yapılıyor..."
-                        : "Giriş Yap",
-                    onPressed: authState.isLoading
-                        ? null
-                        : () async {
-                            await signIn();
-                          },
+                    text: authState.isLoading ? l10n.loggingIn : l10n.login,
+                    onPressed: authState.isLoading ? null : signIn,
                     backgroundColor: AppTheme.primaryColor,
                     borderRadius: 20,
                     height: 55,
@@ -246,7 +271,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   const SizedBox(height: 30),
 
-                  // register
+                  //sign up button
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -254,12 +279,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         MaterialPageRoute(builder: (_) => const SignUpPage()),
                       );
                     },
-                    child: const Text("Henüz Hesabınız Yok Mu?"),
+                    child: Text(l10n.noAccountYet),
                   ),
 
                   const SizedBox(height: 30),
 
-                  // google sign-in
+                  //sign in with google button
                   GestureDetector(
                     onTap: authState.isLoading ? null : signInWithGoogle,
                     child: Container(
@@ -286,6 +311,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
+  //dispose
   @override
   void dispose() {
     emailController.dispose();

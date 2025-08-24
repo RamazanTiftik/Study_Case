@@ -2,13 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class TravelService {
+
+  //firebase
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
-  // Kullanıcı ID al
+  // get usre id
   String get userId => _auth.currentUser!.uid;
 
-  // Favoriye ekle
+  // add favorites
   Future<void> addFavorite(String tripId) async {
     await _firestore
         .collection('users')
@@ -18,7 +20,7 @@ class TravelService {
         .set({'createdAt': FieldValue.serverTimestamp()});
   }
 
-  // Favoriden çıkar
+  // remove from favorites
   Future<void> removeFavorite(String tripId) async {
     await _firestore
         .collection('users')
@@ -28,7 +30,7 @@ class TravelService {
         .delete();
   }
 
-  // Favori mi?
+  // isFavorite?
   Future<bool> isFavorite(String tripId) async {
     final doc = await _firestore
         .collection('users')
@@ -40,7 +42,7 @@ class TravelService {
     return doc.exists;
   }
 
-  // Tüm favorileri getir
+  // get all favorites
   Future<List<String>> getFavorites() async {
     final snapshot = await _firestore
         .collection('users')

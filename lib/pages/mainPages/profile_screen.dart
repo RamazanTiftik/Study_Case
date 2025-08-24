@@ -8,6 +8,7 @@ import 'package:percon_case_project/theme/app_theme.dart';
 import 'package:percon_case_project/widgets/custom_alert.dart';
 import 'package:percon_case_project/widgets/custom_app_bar.dart';
 import 'package:percon_case_project/widgets/custom_button.dart';
+import 'package:percon_case_project/l10n/app_localizations.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -18,22 +19,20 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String formatDate(DateTime? date) {
-    if (date == null) return "Yok";
+    if (date == null) return AppLocalizations.of(context)!.none;
     return DateFormat("dd/MM/yyyy HH:mm").format(date);
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final loc = AppLocalizations.of(context)!;
 
-    // VIEW
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Profile Screen",
+        title: loc.profileScreen,
         showBackButton: true,
-        onFilterPressed: () {
-          Navigator.pop(context);
-        },
+        onFilterPressed: () => Navigator.pop(context),
         onFavoritePressed: () {
           Navigator.push(
             context,
@@ -51,9 +50,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 50),
         child: Column(
           children: [
-            // Profil ikonu
+            // profile icon
             CircleAvatar(
-              radius: 80, // büyük görünmesi için
+              radius: 80,
               backgroundColor: AppTheme.primaryColor,
               child: Text(
                 authState.user?.fullName != null
@@ -68,7 +67,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 50),
 
-            // user's info
+            // user info
             Expanded(
               child: ListView(
                 children: [
@@ -89,7 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  "Full Name: ${authState.user?.fullName ?? 'Yok'}",
+                                  "${loc.fullName}: ${authState.user?.fullName ?? loc.none}",
                                   style: const TextStyle(fontSize: 18),
                                 ),
                               ),
@@ -103,7 +102,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  "Email: ${authState.user?.email ?? 'Yok'}",
+                                  "${loc.email}: ${authState.user?.email ?? loc.none}",
                                   style: const TextStyle(fontSize: 18),
                                 ),
                               ),
@@ -120,7 +119,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  "Created At: ${formatDate(authState.user?.createdAt)}",
+                                  "${loc.createdAt}: ${formatDate(authState.user?.createdAt)}",
                                   style: const TextStyle(fontSize: 18),
                                 ),
                               ),
@@ -134,7 +133,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  "Last Login: ${formatDate(authState.user?.lastLogin)}",
+                                  "${loc.lastLogin}: ${formatDate(authState.user?.lastLogin)}",
                                   style: const TextStyle(fontSize: 18),
                                 ),
                               ),
@@ -148,16 +147,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            // Çıkış Yap Butonu
+            // sign out button
             CustomButton(
-              text: "Çıkış Yap",
+              text: loc.logout,
               onPressed: () async {
                 CustomAlert.show(
                   context,
-                  title: "Uyarı",
-                  message: "Çıkış yapmak istiyor musun?",
-                  confirmText: "Evet",
-                  cancelText: "Hayır",
+                  title: loc.warning,
+                  message: loc.confirmLogout,
+                  confirmText: loc.yes,
+                  cancelText: loc.no,
                   onConfirm: () async {
                     await ref.read(authProvider.notifier).logout();
                     Navigator.pushReplacement(
@@ -167,9 +166,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     );
                   },
-                  onCancel: () {
-                    // sadece kapatıyor
-                  },
+                  onCancel: () {},
                 );
               },
               backgroundColor: Colors.red,

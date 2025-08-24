@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:percon_case_project/model/app_user.dart';
 import 'package:percon_case_project/service/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthState {
   final AppUser? user;
@@ -21,7 +22,23 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final Auth _authService;
 
-  AuthNotifier(this._authService) : super(AuthState());
+  AuthNotifier(this._authService) : super(AuthState()) {
+    _init(); // when provider exists -> hydrate to user
+  }
+
+  Future<void> _init() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      try {
+        final appUser = await _authService.getUserFromFirestore(
+          firebaseUser.uid,
+        );
+        state = state.copyWith(user: appUser);
+      } catch (e) {
+        state = state.copyWith(error: e.toString());
+      }
+    }
+  }
 
   // user register
   Future<void> register(String email, String password, String fullName) async {

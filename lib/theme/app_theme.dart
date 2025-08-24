@@ -30,7 +30,7 @@ class AppTheme {
     );
   }
 
-  // App genel teması
+  // app general theme
   static ThemeData lightTheme = ThemeData(
     primaryColor: primaryColor,
     colorScheme: ColorScheme.light(
